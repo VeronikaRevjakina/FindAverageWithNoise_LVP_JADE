@@ -1,7 +1,9 @@
 package ru.spbu.mas.behaviour;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 
 public class Utils {
 
@@ -26,5 +28,9 @@ public class Utils {
         } catch (ClassNotFoundException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String mapToString(HashMap<String, Integer> map) {
+        return Arrays.toString(map.entrySet().toArray());
     }
 }

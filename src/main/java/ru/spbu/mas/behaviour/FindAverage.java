@@ -7,6 +7,7 @@ import ru.spbu.mas.agent.MyAgent;
 import ru.spbu.mas.main.ContainerKiller;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -44,6 +45,12 @@ public class FindAverage extends TickerBehaviour {
     }
 
     private void send() {
+
+        System.out.println("Agent:"+ agent.getAID().getLocalName()+" "+
+                currentStep + ") Sending " +
+                Utils.mapToString(agent.freshAgentsNumbers)
+                + " to " + Arrays.toString(agent.linkedAgents));
+
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         for (String linkedAgent : agent.linkedAgents) {
             msg.addReceiver(new AID(linkedAgent, AID.ISLOCALNAME));
@@ -66,6 +73,10 @@ public class FindAverage extends TickerBehaviour {
                 HashMap<String, Integer> map = (HashMap<String, Integer>)
                         Utils.deserializeFromString(msg.getContent());
 
+                System.out.println("Agent:"+ agent.getAID().getLocalName()+" " +
+                        currentStep + ") Received " +
+                        Utils.mapToString(map));
+
                 map.keySet().removeAll(agent.agentsNumbers.keySet());
                 agent.freshAgentsNumbers.putAll(map);
             } else
@@ -87,7 +98,7 @@ public class FindAverage extends TickerBehaviour {
             double average = (double) sum / agent.agentsNumbers.size();
 
             DecimalFormat df = new DecimalFormat("#.##");
-            System.out.println(currentStep + ") " + name
+            System.out.println(currentStep + ") " + "Agent: " +name
                     + " calculated average : " + df.format(average));
 
             ContainerKiller.killContainerOf(agent);
