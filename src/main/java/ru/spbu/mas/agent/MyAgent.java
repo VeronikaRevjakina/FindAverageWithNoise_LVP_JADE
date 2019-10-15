@@ -24,7 +24,7 @@ public class MyAgent extends Agent {
         String myName = getAID().getLocalName();
         freshAgentsNumbers.put(myName, myNumber);
 
-        System.out.println(myName+" initial number = " + myNumber);
+        System.out.println("Agent: " + myName +" initial number = " + myNumber);
 
         //copy all linked agents from declaraion, from 1 parameter
         linkedAgents = Arrays.copyOfRange(getArguments(), 1,
