@@ -7,9 +7,22 @@ import jade.core.Runtime;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 class MainController {
 
-    private static final int numberOfAgents = 5;
+    private static final ArrayList<String []> parameters = new ArrayList<>(Arrays.asList(
+            new String[]{"5", "2", "4", "8"},
+            new String[]{"15", "1", "3", "6"},
+            new String[]{"10", "1", "4", "5"},
+            new String[]{"3", "1", "3", "8"},
+            new String[]{"2", "4", "3", "7", "10"},
+            new String[]{"10", "3", "2", "1"},
+            new String[]{"10", "6", "2", "10"},
+            new String[]{"5", "6", "7", "5", "4"},
+            new String[]{"8", "1", "6", "4", "3"},
+            new String[]{"10", "9", "7", "5"}));
 
     void initAgents() {
         // Retrieve the singleton instance of the JADE Runtime
@@ -20,44 +33,16 @@ class MainController {
         p.setParameter(Profile.MAIN_PORT, "10098");
         p.setParameter(Profile.GUI, "true");
         ContainerController cc = rt.createMainContainer(p);
-
+        int i=0;
 
         try {
+             for(String[] agentParameter : parameters) {
+                 i++;// for agent name
+                 AgentController agent = cc.createNewAgent(Integer.toString(i),
+                         "ru.spbu.mas.agent.MyAgent", agentParameter);
 
-            //Object[] arr=new Object[]{"5"};
-
-            AgentController agent1 = cc.createNewAgent(Integer.toString(1),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"5","2","4","8"});
-            AgentController agent2 = cc.createNewAgent(Integer.toString(2),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"15","1","3","6"});
-            AgentController agent3 = cc.createNewAgent(Integer.toString(3),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"10","1","4","5"});
-            AgentController agent4 = cc.createNewAgent(Integer.toString(4),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"3","1","3","8"});
-            AgentController agent5 = cc.createNewAgent(Integer.toString(5),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"2","4","3","7","10"});
-            AgentController agent6 = cc.createNewAgent(Integer.toString(6),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"10","3","2","1"});
-            AgentController agent7 = cc.createNewAgent(Integer.toString(7),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"10","6","2","10"});
-            AgentController agent8 = cc.createNewAgent(Integer.toString(8),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"5","6","7","5","4"});
-            AgentController agent9 = cc.createNewAgent(Integer.toString(9),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"8","1","6","4","3"});
-            AgentController agent10 = cc.createNewAgent(Integer.toString(10),
-                    "ru.spbu.mas.agent.MyAgent", new Object[]{"10","9","7","5"});
-
-            agent1.start();
-            agent2.start();
-            agent3.start();
-            agent4.start();
-            agent5.start();
-            agent6.start();
-            agent7.start();
-            agent8.start();
-            agent9.start();
-            agent10.start();
-
+                 agent.start();
+             }
         } catch (Exception e) {
             e.printStackTrace();
         }
