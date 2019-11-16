@@ -7,17 +7,19 @@ import ru.spbu.mas.agent.MyAgent;
 import ru.spbu.mas.main.ContainerKiller;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 public class FindAverage extends TickerBehaviour {
-
+    // 1->2 breakable connection
+    private final static double PROBABILITY_OF_CONNECTION_BREAK = 0.3;
+    // 2->3 delay connection
+    private final static double PROBABILITY_OF_DELAY = 0.25;
+    private final static int MAX_DELAY = 10;
+    private static final double DEFAULT_ALPHA = 0.1;
 
     private final MyAgent agent;
     private int currentStep = 0;
     private State state = State.SEND;
-
 
     public FindAverage(MyAgent agent, long period) {
         super(agent, period);
@@ -46,63 +48,73 @@ public class FindAverage extends TickerBehaviour {
 
     private void send() {
 
-        System.out.println("Agent:"+ agent.getAID().getLocalName()+" "+
-                currentStep + ") Sending " +
-                Utils.mapToString(agent.freshAgentsNumbers)
-                + " to " + Arrays.toString(agent.linkedAgents));
-
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         for (String linkedAgent : agent.linkedAgents) {
+            //if 1->2 connection then break it if probability more than 0.3
+            if (agent.getAID().getLocalName().equals("Agent1")
+                    && linkedAgent.equals("Agent2")) {
+                double connectionExistParam = Math.random();
+                if (connectionExistParam > PROBABILITY_OF_CONNECTION_BREAK) {
+                    continue;
+                }
+            }
             msg.addReceiver(new AID(linkedAgent, AID.ISLOCALNAME));
+
+            //if 2->3 connection then delay if probability more than 0.25
+            if (agent.getAID().getLocalName().equals("Agent2")
+                    && linkedAgent.equals("Agent3")) {
+                double connectionDelayParam = Math.random();
+                if (connectionDelayParam > PROBABILITY_OF_DELAY) {
+                    //Generate delay
+                    int delay = (int) (Math.random() * MAX_DELAY);
+
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(delay);
+                    } catch (InterruptedException e) {
+                        System.out.println(e.toString());
+                    }
+                }
+            }
         }
-        msg.setContent(Utils.serializeToString(agent.freshAgentsNumbers));
+        double noise = Math.sin(agent.getMyNumber());
+        msg.setContent(String.valueOf(agent.getMyNumber() - noise));
+
+        System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
+                currentStep + ") Sending "+String.valueOf(agent.getMyNumber() - noise));
         agent.send(msg);
-
-        agent.agentsNumbers.putAll(agent.freshAgentsNumbers);
-        agent.freshAgentsNumbers.clear();
-
         state = State.RECEIVE;
     }
 
     private void receive() {
-        for (int i = 0; i < agent.linkedAgents.length; i++) {
+        double res = 0;
+        double agentNumber = agent.getMyNumber();
+        while ((agent.receive()) != null) {
+
             ACLMessage msg = agent.receive();
             if (msg != null) {
+                double numberReceived = Double.parseDouble(msg.getContent());
+                System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
+                        currentStep + ") Received "+numberReceived);
+                res += numberReceived - agentNumber;
 
-                @SuppressWarnings("unchecked")
-                HashMap<String, Integer> map = (HashMap<String, Integer>)
-                        Utils.deserializeFromString(msg.getContent());
-
-                System.out.println("Agent:"+ agent.getAID().getLocalName()+" " +
-                        currentStep + ") Received " +
-                        Utils.mapToString(map));
-
-                map.keySet().removeAll(agent.agentsNumbers.keySet());
-                agent.freshAgentsNumbers.putAll(map);
-            } else
-                block();
-
+            }
         }
-        state = agent.freshAgentsNumbers.size() > 0
-                ? State.SEND
-                : State.END;
+        agent.setMyNumber(agentNumber + DEFAULT_ALPHA * res);
+
+        if (currentStep >= 10) {
+            state = State.END;
+        }
+        state = State.SEND;
     }
 
     private void end() {
         String name = agent.getAID().getLocalName();
 
-        if (name.equals(agent.agentsNumbers.keySet().stream()
-                .max(Comparator.naturalOrder()).orElse(name))) {
+        DecimalFormat df = new DecimalFormat("#.##");
+        System.out.println(currentStep + ") " + "Agent: " + name
+                + " calculated average : " + df.format(agent.getMyNumber()));
 
-            int sum = agent.agentsNumbers.values().stream().mapToInt(i -> i).sum();
-            double average = (double) sum / agent.agentsNumbers.size();
-
-            DecimalFormat df = new DecimalFormat("#.##");
-            System.out.println(currentStep + ") " + "Agent: " +name
-                    + " calculated average : " + df.format(average));
-
-            ContainerKiller.killContainerOf(agent);
-        }
+        ContainerKiller.killContainerOf(agent);
     }
 
 }
