@@ -7,6 +7,8 @@ import ru.spbu.mas.agent.MyAgent;
 import ru.spbu.mas.main.ContainerKiller;
 
 import java.text.DecimalFormat;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class FindAverage extends TickerBehaviour {
@@ -51,8 +53,8 @@ public class FindAverage extends TickerBehaviour {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         for (String linkedAgent : agent.linkedAgents) {
             //if 1->2 connection then break it if probability more than 0.3
-            if (agent.getAID().getLocalName().equals("Agent1")
-                    && linkedAgent.equals("Agent2")) {
+            if (agent.getAID().getLocalName().equals("1")
+                    && linkedAgent.equals("2")) {
                 double connectionExistParam = Math.random();
                 if (connectionExistParam > PROBABILITY_OF_CONNECTION_BREAK) {
                     continue;
@@ -61,8 +63,8 @@ public class FindAverage extends TickerBehaviour {
             msg.addReceiver(new AID(linkedAgent, AID.ISLOCALNAME));
 
             //if 2->3 connection then delay if probability more than 0.25
-            if (agent.getAID().getLocalName().equals("Agent2")
-                    && linkedAgent.equals("Agent3")) {
+            if (agent.getAID().getLocalName().equals("2")
+                    && linkedAgent.equals("3")) {
                 double connectionDelayParam = Math.random();
                 if (connectionDelayParam > PROBABILITY_OF_DELAY) {
                     //Generate delay
@@ -80,29 +82,35 @@ public class FindAverage extends TickerBehaviour {
         msg.setContent(String.valueOf(agent.getMyNumber() - noise));
 
         System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
-                currentStep + ") Sending "+String.valueOf(agent.getMyNumber() - noise));
+                currentStep + ") Sending " + String.valueOf(agent.getMyNumber() - noise));
         agent.send(msg);
         state = State.RECEIVE;
     }
 
     private void receive() {
         double res = 0;
+        Set<String> processed = new HashSet<>();
         double agentNumber = agent.getMyNumber();
         while ((agent.receive()) != null) {
+            //TODO:OR CHANGE BEHAVIOR Cyclic probably
 
             ACLMessage msg = agent.receive();
             if (msg != null) {
-                double numberReceived = Double.parseDouble(msg.getContent());
-                System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
-                        currentStep + ") Received "+numberReceived);
-                res += numberReceived - agentNumber;
+                //TODO:CAN DO HERE HECK IF THIS SENDER ALREADY PROCESSED because they send a lot of messages
+                if (processed.isEmpty() || !processed.contains(msg.getSender().getLocalName())) {
+                    double numberReceived = Double.parseDouble(msg.getContent());
+                    System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
+                            currentStep + ") Received " + numberReceived);
+                    res += numberReceived - agentNumber;
+                    processed.add(msg.getSender().getLocalName());
 
+                }
             }
         }
         agent.setMyNumber(agentNumber + DEFAULT_ALPHA * res);
 
-        if (currentStep >= 10) {
-            state = State.END;
+        if (currentStep >= 100) {
+            end();
         }
         state = State.SEND;
     }

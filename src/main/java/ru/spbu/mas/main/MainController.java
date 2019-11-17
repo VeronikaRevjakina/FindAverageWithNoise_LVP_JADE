@@ -10,13 +10,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 class MainController {
+    //TODO: CHANGE GRAPH STRUCTURE EACH CONNECTION 2 ENDS
 
     private static final ArrayList<String []> parameters = new ArrayList<>(Arrays.asList(
             new String[]{"20", "2", "3", "4"},
             new String[]{"5", "1", "3", "5"},
             new String[]{"10", "1", "2"},
             new String[]{"10", "1", "5"},
-            new String[]{"5", "1", "5"}));
+            new String[]{"5", "1", "4"}));
 
     void initAgents() {
         // Retrieve the singleton instance of the JADE Runtime
