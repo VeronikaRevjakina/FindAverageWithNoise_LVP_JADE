@@ -7,6 +7,7 @@ import ru.spbu.mas.agent.MyAgent;
 import ru.spbu.mas.main.ContainerKiller;
 
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -17,7 +18,7 @@ public class FindAverage extends TickerBehaviour {
     // 2->3 delay connection
     private final static double PROBABILITY_OF_DELAY = 0.25;
     private final static int MAX_DELAY = 10;
-    private static final double DEFAULT_ALPHA = 0.1;
+    private static final double DEFAULT_ALPHA = 0.2;
 
     private final MyAgent agent;
     private int currentStep = 0;
@@ -62,9 +63,9 @@ public class FindAverage extends TickerBehaviour {
             }
             msg.addReceiver(new AID(linkedAgent, AID.ISLOCALNAME));
 
-            //if 2->3 connection then delay if probability more than 0.25
-            if (agent.getAID().getLocalName().equals("2")
-                    && linkedAgent.equals("3")) {
+            //if 6->8 connection then delay if probability more than 0.25
+            if (agent.getAID().getLocalName().equals("6")
+                    && linkedAgent.equals("8")) {
                 double connectionDelayParam = Math.random();
                 if (connectionDelayParam > PROBABILITY_OF_DELAY) {
                     //Generate delay
@@ -78,13 +79,19 @@ public class FindAverage extends TickerBehaviour {
                 }
             }
         }
-        double noise = Math.sin(agent.getMyNumber());
-        msg.setContent(String.valueOf(agent.getMyNumber() - noise));
+        double noisyContent=generateNoise();
+        msg.setContent(String.valueOf(noisyContent));
 
-        System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
-                currentStep + ") Sending " + String.valueOf(agent.getMyNumber() - noise));
+
+        System.out.println(currentStep + ") " +"Agent:" + agent.getAID().getLocalName() +
+                " Sending " + String.valueOf(noisyContent));
         agent.send(msg);
         state = State.RECEIVE;
+    }
+
+    private double generateNoise() {
+        double noise = 0.1*Math.sin(Instant.now().toEpochMilli());
+        return (agent.getMyNumber() - noise);
     }
 
     private void receive() {
@@ -92,24 +99,28 @@ public class FindAverage extends TickerBehaviour {
         Set<String> processed = new HashSet<>();
         double agentNumber = agent.getMyNumber();
         while ((agent.receive()) != null) {
-            //TODO:OR CHANGE BEHAVIOR Cyclic probably
-
             ACLMessage msg = agent.receive();
             if (msg != null) {
-                //TODO:CAN DO HERE HECK IF THIS SENDER ALREADY PROCESSED because they send a lot of messages
                 if (processed.isEmpty() || !processed.contains(msg.getSender().getLocalName())) {
                     double numberReceived = Double.parseDouble(msg.getContent());
-                    System.out.println("Agent:" + agent.getAID().getLocalName() + " " +
-                            currentStep + ") Received " + numberReceived);
+
+                    System.out.println(currentStep + ") " +"Agent:" + agent.getAID().getLocalName()
+                            +" Received " + numberReceived);
+
                     res += numberReceived - agentNumber;
                     processed.add(msg.getSender().getLocalName());
 
+                }
+                else{
+                    if(processed.size()==agent.linkedAgents.length){
+                        break;
+                    }
                 }
             }
         }
         agent.setMyNumber(agentNumber + DEFAULT_ALPHA * res);
 
-        if (currentStep >= 100) {
+        if (currentStep >= 1000) {
             end();
         }
         state = State.SEND;
@@ -118,7 +129,7 @@ public class FindAverage extends TickerBehaviour {
     private void end() {
         String name = agent.getAID().getLocalName();
 
-        DecimalFormat df = new DecimalFormat("#.##");
+        DecimalFormat df = new DecimalFormat("#.######");
         System.out.println(currentStep + ") " + "Agent: " + name
                 + " calculated average : " + df.format(agent.getMyNumber()));
 
